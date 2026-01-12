@@ -37,11 +37,11 @@ class SteamProfileCommentParser:
     def parse_profile(self, profile_url: str, max_pages: int = 200) -> Dict[str, Any]:
         """
         Main parsing function
-        
+
         Args:
             profile_url: Steam profile URL
             max_pages: maximum pages to parse
-            
+
         Returns:
             dictionary with comment data
         """
@@ -102,6 +102,7 @@ class SteamProfileCommentParser:
         except Exception as e:
             print(f"unexpected error: {e}")
             import traceback
+
             traceback.print_exc()
             return {}
 
@@ -112,7 +113,9 @@ class SteamProfileCommentParser:
             script_tags = soup.find_all("script")
             for script in script_tags:
                 if script.string and "InitializeCommentThread" in script.string:
-                    pattern = r"InitializeCommentThread\s*\(\s*[^,]+,\s*[^,]+,\s*({[^}]+})"
+                    pattern = (
+                        r"InitializeCommentThread\s*\(\s*[^,]+,\s*[^,]+,\s*({[^}]+})"
+                    )
                     match = re.search(pattern, script.string, re.DOTALL)
                     if match:
                         try:
@@ -144,7 +147,9 @@ class SteamProfileCommentParser:
             print(f"error getting comment count: {e}")
             return 0
 
-    def _get_all_comments_url(self, soup: BeautifulSoup, base_url: str) -> Optional[str]:
+    def _get_all_comments_url(
+        self, soup: BeautifulSoup, base_url: str
+    ) -> Optional[str]:
         """construct URL for all comments page"""
         try:
             # method 1: find "All comments" link
@@ -160,7 +165,9 @@ class SteamProfileCommentParser:
                     profile_data = json.loads(steamid_match.group(1))
                     steamid = profile_data.get("steamid")
                     if steamid:
-                        return f"https://steamcommunity.com/profiles/{steamid}/allcomments"
+                        return (
+                            f"https://steamcommunity.com/profiles/{steamid}/allcomments"
+                        )
                 except:
                     pass
 
@@ -214,7 +221,9 @@ class SteamProfileCommentParser:
                 if comments_count == 0:
                     no_new_comments_pages += 1
                     if no_new_comments_pages >= 2:
-                        print(f"\nstopping: {no_new_comments_pages} pages without new comments")
+                        print(
+                            f"\nstopping: {no_new_comments_pages} pages without new comments"
+                        )
                         break
                 else:
                     no_new_comments_pages = 0
@@ -271,11 +280,17 @@ class SteamProfileCommentParser:
                 comment_data = self._parse_single_comment(comment)
                 if comment_data:
                     # skip empty comments
-                    if not comment_data.get("comment_text") or not comment_data["comment_text"].strip():
+                    if (
+                        not comment_data.get("comment_text")
+                        or not comment_data["comment_text"].strip()
+                    ):
                         continue
 
                     # skip system messages
-                    if "Это сообщение ещё не проанализировано нашей системой" in comment_data["comment_text"]:
+                    if (
+                        "Это сообщение ещё не проанализировано нашей системой"
+                        in comment_data["comment_text"]
+                    ):
                         continue
 
                     comment_id = comment_data["comment_id"]
@@ -339,7 +354,9 @@ class SteamProfileCommentParser:
                     "div", class_=lambda x: x and "text" in x.lower()
                 )
 
-            comment_text = comment_text_div.get_text(strip=True) if comment_text_div else ""
+            comment_text = (
+                comment_text_div.get_text(strip=True) if comment_text_div else ""
+            )
 
             # timestamp
             timestamp_span = comment_element.find(
@@ -433,32 +450,36 @@ class SteamProfileCommentParser:
                 writer = csv.writer(f)
 
                 # headers
-                writer.writerow([
-                    "user",
-                    "steam_id",
-                    "profile_url",
-                    "comment_text",
-                    "timestamp",
-                    "avatar_url",
-                    "status",
-                    "comment_id",
-                    "parsed_time",
-                ])
+                writer.writerow(
+                    [
+                        "user",
+                        "steam_id",
+                        "profile_url",
+                        "comment_text",
+                        "timestamp",
+                        "avatar_url",
+                        "status",
+                        "comment_id",
+                        "parsed_time",
+                    ]
+                )
 
                 # data rows
                 for user_data in self.comments_data.values():
                     for comment in user_data["comments"]:
-                        writer.writerow([
-                            comment.get("user", ""),
-                            comment.get("steam_id", ""),
-                            comment.get("profile_url", ""),
-                            comment.get("comment_text", ""),
-                            comment.get("timestamp", ""),
-                            comment.get("avatar_url", ""),
-                            comment.get("status", ""),
-                            comment.get("comment_id", ""),
-                            comment.get("parsed_time", ""),
-                        ])
+                        writer.writerow(
+                            [
+                                comment.get("user", ""),
+                                comment.get("steam_id", ""),
+                                comment.get("profile_url", ""),
+                                comment.get("comment_text", ""),
+                                comment.get("timestamp", ""),
+                                comment.get("avatar_url", ""),
+                                comment.get("status", ""),
+                                comment.get("comment_id", ""),
+                                comment.get("parsed_time", ""),
+                            ]
+                        )
 
             print(f"saved to CSV file: {filename}")
 
@@ -481,9 +502,7 @@ class SteamProfileCommentParser:
             print("-" * 60)
 
             sorted_users = sorted(
-                self.comments_data.items(),
-                key=lambda x: x[1]["count"],
-                reverse=True
+                self.comments_data.items(), key=lambda x: x[1]["count"], reverse=True
             )[:top_n]
 
             for i, (user, data) in enumerate(sorted_users, 1):
